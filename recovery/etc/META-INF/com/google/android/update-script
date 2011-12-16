@@ -1,0 +1,84 @@
+# Mount system for check figurepoint etc.
+# mount("ext4", "EMMC","/dev/block/mmcblk0p2", "/system");
+# Make sure Check system image figurepoint first.
+# uncomment below lines to check
+# assert(file_getprop("/system/build.prop", "ro.build.fingerprint") == "freescale/imx53_evk/imx53_evk/imx53_evk:2.2/FRF85B/eng.b33651.20100914.145340:eng/test-keys");
+# assert(getprop("ro.build.platform) == "imx5x");
+# unmount("/system");
+
+
+ui_print("extract kernel image...");
+package_extract_file("files/uImage", "/tmp/uImage");
+# Write uImage to 1M position.
+ui_print("writting kernel image");
+simple_dd("/tmp/uImage", "/dev/block/mmcblk0", 1048576);
+
+ui_print("extract uramdisk image...");
+package_extract_file("files/uramdisk.img", "/tmp/uramdisk.img");
+# Write uImage to 1M position.
+ui_print("writting uramdisk image");
+simple_dd("/tmp/uramdisk", "/dev/block/mmcblk0", 6291456);
+show_progress(0.1, 5);
+
+# Write u-boot to 1K position.
+# u-boot binary should be a no padding uboot!
+# For eMMC(iNand) device, needs to unlock boot partition.
+ui_print("writting u-boot...");
+sysfs_file_write("class/mmc_host/mmc0/mmc0:0001/boot_config", "1");
+package_extract_file("files/u-boot-no-padding.bin", "/tmp/u-boot-no-padding.bin");
+simple_dd("/tmp/u-boot-no-padding.bin", "/dev/block/mmcblk0", 1024);
+sysfs_file_write("class/mmc_host/mmc0/mmc0:0001/boot_config", "8");
+show_progress(0.1, 5);
+
+# You can use two way to update your system which using ext4 system.
+# 1. dd hole system.img to your mmcblk0p2 partition.
+# 2. format system/ ;copy files under system dir in update.zip; change the premissions.
+#   [ This operation may cause recovery script very complex, if you are just update few files, please choose this operation 2.
+# For UBIFS, please choose option 2.
+
+# Begin option 1.
+package_extract_file("files/system.img", "/tmp/system.img");
+ui_print("upgrading system partition...\n");
+simple_dd("/tmp/system.img", "/dev/block/mmcblk0p2", 0);
+show_progress(0.1, 5);
+# End option 1.
+
+# Begin option 2.
+# format and copy system image.
+ui_print("foramting...");
+format("ext4","EMMC","/dev/block/mmcblk0p2");
+# Change ubi path regarding your dev path.
+# format("ubifs","UBI","/dev/block/ubi0_1");
+#show_progress(0.1, 5);
+
+# In fsl system, it will be mount at /tmp/system directory.
+ui_print("mounting...");
+mount("ext4", "EMMC","/dev/block/mmcblk0p2", "/system");
+# mount("ubifs", "UBI","/dev/ubi1_0", "/system");
+ui_print("extract pakcage...");
+show_progress(0.1, 3);
+package_extract_dir("system", "/system/");
+show_progress(0.1, 10);
+# copy the boot.img(kernel and root direcotry)
+#write_raw_image("bootimg", "BOOT:" );
+show_progress(0.1, 10);
+
+# permimissions...
+ui_print("Symlinks and permissions...");
+symlink("toolbox", "/system/bin/ionice","/tmp/system/bin/nandread");
+set_perm_recursive(0, 0, 0755, 0644, "/system");
+set_perm_recursive(0, 2000, 0755, 0755, "/system/bin");
+set_perm(0, 3003, 02750, "/system/bin/netcfg");
+set_perm(0, 3004, 02755, "/system/bin/ping");
+set_perm(0, 2000, 06750, "/system/bin/run-as");
+set_perm_recursive(1002, 1002, 0755, 0440, "/system/etc/bluetooth");
+set_perm(0, 0, 0755, "/system/etc/bluetooth");
+set_perm(1000, 1000, 0640, "/system/etc/bluetooth/auto_pairing.conf");
+set_perm(3002, 3002, 0444, "/system/etc/bluetooth/blacklist.conf");
+set_perm(1002, 1002, 0440, "/system/etc/dbus.conf");
+set_perm(1014, 2000, 0550, "/system/etc/dhcpcd/dhcpcd-run-hooks");
+set_perm(0, 2000, 0550, "/system/etc/init.goldfish.sh");
+set_perm(0, 0, 0544, "/system/etc/install-recovery.sh");
+set_perm_recursive(0, 0, 0755, 0555, "/system/etc/ppp");
+unmount("/system")
+# End option 2.
