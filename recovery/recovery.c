@@ -810,8 +810,21 @@ main(int argc, char **argv) {
     }
 
     if (status != INSTALL_SUCCESS) ui_set_background(BACKGROUND_ICON_ERROR);
-    if (status != INSTALL_SUCCESS || ui_text_visible()) {
-        prompt_and_wait();
+    //if (status != INSTALL_SUCCESS || ui_text_visible()) {
+    if (status != INSTALL_SUCCESS) {
+        // Remove the command file, so recovery won't repeat indefinitely.
+        if (ensure_path_mounted(COMMAND_FILE) != 0 ||
+                (unlink(COMMAND_FILE) && errno != ENOENT)) {
+            LOGW("Can't unlink %s\n", COMMAND_FILE);
+        }
+
+        sync();  // For good measure.
+        while (1) {
+            system("echo 0 > /sys/power/led");
+            sleep(1);
+            system("echo 1 > /sys/power/led");
+            sleep(1);
+        }
     }
     
     // Otherwise, get ready to boot the main system...

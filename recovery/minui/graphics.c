@@ -158,7 +158,7 @@ static int get_framebuffer(GGLSurface *fb)
     fb->stride = vi.xres;
     fb->data = bits;
     fb->format = GGL_PIXEL_FORMAT_RGB_565;
-    memset(fb->data, 0, vi.yres * vi.xres * 2);
+//    memset(fb->data, 0, vi.yres * vi.xres * 2);
 
     fb++;
 
@@ -168,7 +168,7 @@ static int get_framebuffer(GGLSurface *fb)
     fb->stride = vi.xres;
     fb->data = (void*) (((unsigned) bits) + vi.yres * vi.xres * 2);
     fb->format = GGL_PIXEL_FORMAT_RGB_565;
-    memset(fb->data, 0, vi.yres * vi.xres * 2);
+//    memset(fb->data, 0, vi.yres * vi.xres * 2);
 
 #ifdef FSL_EPDC_FB
     auto_update_mode = AUTO_UPDATE_MODE_REGION_MODE;
@@ -216,8 +216,8 @@ static void set_active_framebuffer(unsigned n)
         perror("active fb swap failed");
     }
 #ifdef FSL_EPDC_FB
-    update_to_display(0, 0, vi.xres, vi.yres,
-			WAVEFORM_MODE_AUTO, 1, 0);
+//    update_to_display(0, 0, vi.xres, vi.yres,
+//			WAVEFORM_MODE_AUTO, 1, 0);
 #endif
 }
 
@@ -230,8 +230,8 @@ void gr_flip(void)
 
     /* copy data from the in-memory surface to the buffer we're about
      * to make active. */
-    memcpy(gr_framebuffer[gr_active_fb].data, gr_mem_surface.data,
-           vi.xres * vi.yres * 2);
+//    memcpy(gr_framebuffer[gr_active_fb].data, gr_mem_surface.data,
+//           vi.xres * vi.yres * 2);
 
     /* inform the display driver */
     set_active_framebuffer(gr_active_fb);
@@ -335,7 +335,7 @@ static void gr_init_font(void)
 
     in = font.rundata;
     while((data = *in++)) {
-        memset(bits, (data & 0x80) ? 255 : 0, data & 0x7f);
+//        memset(bits, (data & 0x80) ? 255 : 0, data & 0x7f);
         bits += (data & 0x7f);
     }
 
